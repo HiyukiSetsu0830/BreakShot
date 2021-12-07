@@ -21,12 +21,11 @@ public class PlayerController : MonoBehaviour
     //地面接触判定
     private bool isGround = false;
     //プレイヤーの座標
-    private Vector3 startPos;
     private Vector3 playerPos;
     //プレイヤー初期位置
     private const float startPosZ = -20f;
     private const float startPosY = 0.25f;
-
+    
     //移動キーの判定
     bool getJButtonDown = false;
     bool getRButtonDown = false;
@@ -37,30 +36,31 @@ public class PlayerController : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        //最初の時点でのプレイヤーのポジションを取得
+        playerPos = GetComponent<Transform>().position;    
         //Animatorを取得
         playerAnimator = GetComponent<Animator>();
         //Rigidbodyを取得
-        playerRigidbody = GetComponent<Rigidbody>();
-        //プレイヤーの初期座標
-        startPos = new Vector3(0f, startPosY, startPosZ);
-        //プレイヤーの座標
-        playerPos = transform.position;
+        playerRigidbody = GetComponent<Rigidbody>();       
 
     }
 
     // Update is called once per frame
     void Update() {
 
+       
         //移動キー
-        float isJumpButton = Input.GetAxis("Jump") * jumpPower;
-        float isMoveButton = Input.GetAxis("Horizontal") * speed;
+        float isJumpButton = Input.GetAxis("Jump");
+        float isMoveButton = Input.GetAxis("Horizontal");
 
         if (canJump) {
             canJump = false;
-            playerPos += new Vector3(0f, isJumpButton, 0f);
+            playerRigidbody.velocity += new Vector3(0f, jumpPower * isJumpButton * Time.deltaTime, 0f);
         }
 
-        playerPos += new Vector3(0f, 0f, isMoveButton);
+        playerRigidbody.velocity += new Vector3(0f, 0f, speed * isMoveButton * Time.deltaTime);
+        //プレイヤーの座標更新
+        playerPos = transform.position;
     }
 
     private void OnCollisionEnter(Collision collision) {
