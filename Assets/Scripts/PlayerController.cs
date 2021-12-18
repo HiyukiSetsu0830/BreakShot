@@ -6,12 +6,16 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
-    
+    //ステート
+    public enum State { Jump,Move,Shot};
+
     //プレイヤーのアニメーションを入れる
     [SerializeField] private Animator playerAnimator;
     [SerializeField] private Rigidbody playerRigidbody;
+    [SerializeField] private GameObject magicBullet;
     [SerializeField] private Texture2D cursor;
     [SerializeField] private Slider slider;
+    private GameObject bullet;
 
     //前方向の速度
     private float speed = 10f;
@@ -23,11 +27,15 @@ public class PlayerController : MonoBehaviour
     private Vector3 playerPos;
     //マウスカーソルの座標
     private Vector3 mousePos;
-    //プレイヤーのHP
-    private int maxHP = 100;
-    private int currentHP;
-   
+    //HP系のプロパティ
+    public int currentHP { get; private set; }
+    public int maxHP { get; private set; } = 100;
+    //攻撃間隔
+    private float interval = 0.3f;
+    private float intervalTime = 0f;
     
+
+
     // Start is called before the first frame update
     void Start()
     {
@@ -49,6 +57,9 @@ public class PlayerController : MonoBehaviour
     // Update is called once per frame
     void Update() {
 
+        //プレイヤーの状況管理
+        State state;
+
         //Jumpステートの場合はJumpにfalseをセットする
         bool isJumpSetFalse = this.playerAnimator.GetCurrentAnimatorStateInfo(0).IsName("jumpBool");
         this.playerAnimator.SetBool("jumpBool", false);
@@ -56,18 +67,33 @@ public class PlayerController : MonoBehaviour
         //移動キー
         bool isJumpButton = Input.GetButton("Jump");
         float isMoveButton = Input.GetAxisRaw("Horizontal") * speed * Time.deltaTime;
+   
         //攻撃キー
         bool isLeftMouseButton = Input.GetButton("Fire1");
 
-        if (isGround && isJumpButton) {
-            this.playerAnimator.SetBool("jumpBool", true);
-            playerRigidbody.velocity = new Vector3(0f, jumpPower, 0f);
-            isGround = false;
+        //マウスのポジション
+        mousePos = Input.mousePosition;
+
+        //射撃間隔
+        if (intervalTime > 0.0f) intervalTime -= Time.deltaTime;
+        //攻撃
+        if (isLeftMouseButton && intervalTime <= 0.0f) {
+            state = State.Shot;
+            Shot();
+            intervalTime = interval;
         }
 
-        //左右移動
-        transform.position += new Vector3(0f, 0f, isMoveButton);
-        
+        //ジャンプ
+        if (isGround && isJumpButton) {
+            state = State.Jump;
+            Jump();
+        }
+        //移動
+        if (isMoveButton > 0.01f || isMoveButton < -0.01f) {
+            state = State.Move;
+            Move(isMoveButton);
+        }
+
         //走るアニメーション
         playerAnimator.SetFloat("Run", Mathf.Abs(isMoveButton));
 
@@ -77,15 +103,21 @@ public class PlayerController : MonoBehaviour
 
         if (diffPos.magnitude > 0.01f) {
             var lookRotation = Quaternion.LookRotation(diffPos);
-            transform.rotation = Quaternion.Lerp(transform.rotation, lookRotation, 0.1f); ;
+            transform.rotation = Quaternion.Lerp(transform.rotation, lookRotation, 0.5f);
         }
+
         playerPos = transform.position;
 
-        //マウスのポジション
-        mousePos = Input.mousePosition;
-        //マウスの左クリックで攻撃
-        if (isLeftMouseButton) Shot();
+        switch (state) {
+            case State.Jump:
+                break;
 
+            case State.Move:
+                break;
+
+            case State.Shot:
+                break;
+        }
     }
 
     private void OnCollisionEnter(Collision collision) {
@@ -104,12 +136,24 @@ public class PlayerController : MonoBehaviour
 
     //射撃メソッド
     private void Shot() {
-        mousePos = Input.mousePosition;
-        Ray ray = Camera.main.ScreenPointToRay(mousePos);
-        RaycastHit hit;
-
-        if (Physics.Raycast(ray, out hit, 100f, LayerMask.GetMask("Enemy"))) {
-            Destroy(hit.collider.gameObject);
+        
+        bool isLMouseButton = Input.GetMouseButton(0);
+        
+        if (isLMouseButton) {
+            bullet = Instantiate(magicBullet, transform.position + Vector3.forward * 0.5f + Vector3.up, Quaternion.identity);
         }
+    }
+
+    private void Jump() {
+
+        this.playerAnimator.SetBool("jumpBool", true);
+        playerRigidbody.velocity = new Vector3(0f, jumpPower, 0f);
+        isGround = false;
+    }
+
+    private void Move(float isMoveButton) {
+
+        //左右移動
+        transform.position += new Vector3(0f, 0f, isMoveButton);
     }
 }
