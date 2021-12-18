@@ -7,7 +7,8 @@ using UnityEngine;
 public class PlayerController : MonoBehaviour
 {
     //ステート
-    public enum State { Jump,Move,Shot};
+    public enum State { Idle,Jump,Move,Shot};
+    State state;
 
     //プレイヤーのアニメーションを入れる
     [SerializeField] private Animator playerAnimator;
@@ -52,13 +53,13 @@ public class PlayerController : MonoBehaviour
         slider.value = 1;
         currentHP = maxHP;
 
+        //プレイヤーの状況初期化
+        state = State.Idle;
+
     }
 
     // Update is called once per frame
     void Update() {
-
-        //プレイヤーの状況管理
-        State state;
 
         //Jumpステートの場合はJumpにfalseをセットする
         bool isJumpSetFalse = this.playerAnimator.GetCurrentAnimatorStateInfo(0).IsName("jumpBool");
@@ -109,6 +110,10 @@ public class PlayerController : MonoBehaviour
         playerPos = transform.position;
 
         switch (state) {
+
+            case State.Idle:
+                break;
+
             case State.Jump:
                 break;
 
