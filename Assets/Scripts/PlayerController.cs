@@ -34,6 +34,9 @@ public class PlayerController : MonoBehaviour
     //攻撃間隔
     private float interval = 0.3f;
     private float intervalTime = 0f;
+    //移動力を入れる
+    public float isMove { get; set; }
+
     
 
 
@@ -79,50 +82,24 @@ public class PlayerController : MonoBehaviour
         if (intervalTime > 0.0f) intervalTime -= Time.deltaTime;
         //攻撃
         if (isLeftMouseButton && intervalTime <= 0.0f) {
-            state = State.Shot;
-            Shot();
-            intervalTime = interval;
+            SetState(State.Shot);
         }
 
         //ジャンプ
         if (isGround && isJumpButton) {
-            state = State.Jump;
-            Jump();
+            SetState(State.Jump);
         }
+
         //移動
         if (isMoveButton > 0.01f || isMoveButton < -0.01f) {
-            state = State.Move;
-            Move(isMoveButton);
-        }
+            isMove = isMoveButton;
+            SetState(State.Move);
 
-        //走るアニメーション
-        playerAnimator.SetFloat("Run", Mathf.Abs(isMoveButton));
+        } else {
+            
+            SetState(State.Idle);
 
-        //キャラクターの移動向きを取得
-        Vector3 diffPos = transform.position - playerPos;
-        diffPos.y = 0f;
-
-        if (diffPos.magnitude > 0.01f) {
-            var lookRotation = Quaternion.LookRotation(diffPos);
-            transform.rotation = Quaternion.Lerp(transform.rotation, lookRotation, 0.5f);
-        }
-
-        playerPos = transform.position;
-
-        switch (state) {
-
-            case State.Idle:
-                break;
-
-            case State.Jump:
-                break;
-
-            case State.Move:
-                break;
-
-            case State.Shot:
-                break;
-        }
+        }        
     }
 
     private void OnCollisionEnter(Collision collision) {
@@ -147,6 +124,8 @@ public class PlayerController : MonoBehaviour
         if (isLMouseButton) {
             bullet = Instantiate(magicBullet, transform.position + Vector3.forward * 0.5f + Vector3.up, Quaternion.identity);
         }
+
+        intervalTime = interval;
     }
 
     private void Jump() {
@@ -156,9 +135,47 @@ public class PlayerController : MonoBehaviour
         isGround = false;
     }
 
-    private void Move(float isMoveButton) {
+    private void Move() {
+
+        isMove = this.isMove;
 
         //左右移動
-        transform.position += new Vector3(0f, 0f, isMoveButton);
+        transform.position += new Vector3(0f, 0f, isMove);
+        playerAnimator.SetFloat("Run", Mathf.Abs(isMove));
+        Vector3 diffPos = transform.position - playerPos;
+        diffPos.y = 0f;
+        if (diffPos.magnitude > 0.01f) {
+            var lookRotation = Quaternion.LookRotation(diffPos);
+            transform.rotation = Quaternion.Lerp(transform.rotation, lookRotation, 0.5f);
+        }
+        playerPos = transform.position;
+    }
+
+    private void SetState(State state) {
+
+        isMove = this.isMove;
+
+        switch (state) {
+
+            case State.Idle:
+                Debug.Log("idle状態");
+                playerAnimator.SetFloat("Run", 0f);
+                break;
+
+            case State.Jump:
+                Debug.Log("Jump状態");
+                Jump();
+                break;
+
+            case State.Move:
+                Debug.Log("Move状態");
+                Move();
+                break;
+
+            case State.Shot:
+                Debug.Log("Shot状態");
+                Shot();
+                break;
+        }
     }
 }
