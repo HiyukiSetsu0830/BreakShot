@@ -4,11 +4,11 @@ using UnityEngine.UI;
 using UnityEngine;
 
 
-public class PlayerController : MonoBehaviour
-{
+public class PlayerController : MonoBehaviour {
     //ステート
-    public enum State { Idle,Jump,Move,Shot};
-    State state;
+    public enum State { Idle, Jump, Move, Shot };
+    State nowState;
+    State preState;
 
     //プレイヤーのアニメーションを入れる
     [SerializeField] private Animator playerAnimator;
@@ -17,6 +17,9 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private Texture2D cursor;
     [SerializeField] private Slider slider;
     private GameObject bullet;
+
+    //HPの最小値
+    const int minHealth = 0;
 
     //前方向の速度
     private float speed = 10f;
@@ -34,15 +37,14 @@ public class PlayerController : MonoBehaviour
     //攻撃間隔
     private float interval = 0.3f;
     private float intervalTime = 0f;
-    //移動力を入れる
-    public float isMove { get; set; }
-
-    
+    //操作プロパティ
+    private float isMove { get; set; }
+    private bool isLMouse { get; set; }
+    private bool isJump { get; set; }
 
 
     // Start is called before the first frame update
-    void Start()
-    {
+    void Start() {
         //カーソル変更
         Cursor.SetCursor(cursor, new Vector2(cursor.width / 2, cursor.height / 2), CursorMode.ForceSoftware);
         //Animatorを取得
@@ -57,7 +59,7 @@ public class PlayerController : MonoBehaviour
         currentHP = maxHP;
 
         //プレイヤーの状況初期化
-        state = State.Idle;
+        nowState = State.Idle;
 
     }
 
@@ -71,7 +73,7 @@ public class PlayerController : MonoBehaviour
         //移動キー
         bool isJumpButton = Input.GetButton("Jump");
         float isMoveButton = Input.GetAxisRaw("Horizontal") * speed * Time.deltaTime;
-   
+
         //攻撃キー
         bool isLeftMouseButton = Input.GetButton("Fire1");
 
@@ -80,26 +82,59 @@ public class PlayerController : MonoBehaviour
 
         //射撃間隔
         if (intervalTime > 0.0f) intervalTime -= Time.deltaTime;
-        //攻撃
-        if (isLeftMouseButton && intervalTime <= 0.0f) {
-            SetState(State.Shot);
+        Debug.Log(nowState);
+        switch (nowState) {
+
+            case State.Idle:    //立っている状態
+                if (isMoveButton == 0f) nowState = State.Idle;                                   //移動入力が無ければIdleに遷移
+                if (isMoveButton > 0.01f || isMoveButton < -0.01f) nowState = State.Move;        //移動キーが押されたらMoveに遷移
+                if (isGround && isJumpButton) nowState = State.Jump;                        //ジャンプキーが押されたらJumpに遷移
+                if (isLeftMouseButton && intervalTime <= 0.0f) nowState = State.Shot;           //左クリックされたらShot状態に遷移
+                break;
+
+            case State.Move:
+                if (isMoveButton == 0f) nowState = State.Idle;                                   //移動入力が無ければIdleに遷移
+                if (isMoveButton > 0.01f || isMoveButton < -0.01f) nowState = State.Move;        //移動キーが押されたらMoveに遷移
+                if (isGround && isJumpButton) nowState = State.Jump;                        //ジャンプキーが押されたらJumpに遷移
+                if (isLeftMouseButton && intervalTime <= 0.0f) nowState = State.Shot;           //左クリックされたらShot状態に遷移
+                break;
+
+            case State.Jump:
+                if (isMoveButton == 0f) nowState = State.Idle;                                   //移動入力が無ければIdleに遷移
+                if (isMoveButton > 0.01f || isMoveButton < -0.01f) nowState = State.Move;        //移動キーが押されたらMoveに遷移
+                if (isGround && isJumpButton) nowState = State.Jump;                        //ジャンプキーが押されたらJumpに遷移
+                if (isLeftMouseButton && intervalTime <= 0.0f) nowState = State.Shot;           //左クリックされたらShot状態に遷移
+                break;
+
+            case State.Shot:
+                if (isMoveButton == 0f) nowState = State.Idle;                                   //移動入力が無ければIdleに遷移
+                if (isMoveButton > 0.01f || isMoveButton < -0.01f) nowState = State.Move;        //移動キーが押されたらMoveに遷移
+                if (isGround && isJumpButton) nowState = State.Jump;                        //ジャンプキーが押されたらJumpに遷移
+                if (isLeftMouseButton && intervalTime <= 0.0f) nowState = State.Shot;           //左クリックされたらShot状態に遷移
+                break;
         }
 
-        //ジャンプ
-        if (isGround && isJumpButton) {
-            SetState(State.Jump);
+        switch (nowState) {
+            case State.Idle:
+                playerAnimator.SetFloat("Run", 0f);
+                break;
+
+            case State.Move:
+                isMove = isMoveButton;
+                Move();
+                break;
+
+            case State.Jump:
+                Jump();
+                break;
+
+            case State.Shot:
+                Shot();
+                break;
         }
 
-        //移動
-        if (isMoveButton > 0.01f || isMoveButton < -0.01f) {
-            isMove = isMoveButton;
-            SetState(State.Move);
-
-        } else {
-            
-            SetState(State.Idle);
-
-        }        
+        //HPが0以下にならないように設定
+        if (currentHP < 0) currentHP = minHealth;
     }
 
     private void OnCollisionEnter(Collision collision) {
@@ -118,9 +153,9 @@ public class PlayerController : MonoBehaviour
 
     //射撃メソッド
     private void Shot() {
-        
+
         bool isLMouseButton = Input.GetMouseButton(0);
-        
+
         if (isLMouseButton) {
             bullet = Instantiate(magicBullet, transform.position + Vector3.forward * 0.5f + Vector3.up, Quaternion.identity);
         }
@@ -149,33 +184,5 @@ public class PlayerController : MonoBehaviour
             transform.rotation = Quaternion.Lerp(transform.rotation, lookRotation, 0.5f);
         }
         playerPos = transform.position;
-    }
-
-    private void SetState(State state) {
-
-        isMove = this.isMove;
-
-        switch (state) {
-
-            case State.Idle:
-                Debug.Log("idle状態");
-                playerAnimator.SetFloat("Run", 0f);
-                break;
-
-            case State.Jump:
-                Debug.Log("Jump状態");
-                Jump();
-                break;
-
-            case State.Move:
-                Debug.Log("Move状態");
-                Move();
-                break;
-
-            case State.Shot:
-                Debug.Log("Shot状態");
-                Shot();
-                break;
-        }
     }
 }
