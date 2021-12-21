@@ -19,7 +19,7 @@ public class PlayerController : MonoBehaviour {
     private GameObject bullet;
 
     //HPの最小値
-    const int minHealth = 0;
+    private const int MIN_HEALTH = 0;
 
     //前方向の速度
     private float speed = 10f;
@@ -65,8 +65,6 @@ public class PlayerController : MonoBehaviour {
     // Update is called once per frame
     void Update() {
 
-       
-
         //移動キー
         bool isJumpButton = Input.GetButton("Jump");
         float inputMoveButton = Input.GetAxisRaw("Horizontal") * speed * Time.deltaTime;
@@ -103,55 +101,56 @@ public class PlayerController : MonoBehaviour {
         switch (nowState) {
             
             case State.Idle:    //立っている状態
-                CommonState();
+                CommonStateTransition();
                 break;
 
             case State.Move:    //移動状態
-                CommonState();
+                CommonStateTransition();
                 break;
 
             case State.Jump:    //ジャンプ状態
-                CommonState();
+                CommonStateTransition();
                 break;
         }
 
         //ステートごとの実行可能行動
         switch (nowState) {
             case State.Idle:
+                Jump();
                 Shot();
                 break;
 
             case State.Move:
-                
+                Jump();
                 Move();
                 Shot();
                 break;
 
             case State.Jump:
-                
                 Jump();
                 Shot();
                 break;
         }
 
         //ステート終了
-        switch (nowState) {
+        if (nowState != preState) {
+            switch (nowState) {
 
-            case State.Idle:
-                break;
+                case State.Idle:
+                    break;
 
-            case State.Move:
-                break;
+                case State.Move:
+                    break;
 
-            case State.Jump:
-                Debug.Log("Jump END");
-                this.playerAnimator.SetBool("jumpBool", false);
-                break;
+                case State.Jump:
+                    this.playerAnimator.SetBool("jumpBool", true);
+                    break;
 
+            }
         }
 
         //HPが0以下にならないように設定
-        if (currentHP < 0) currentHP = minHealth;
+        if (currentHP < 0) currentHP = MIN_HEALTH;
     }
 
     private void OnCollisionEnter(Collision collision) {
@@ -184,8 +183,7 @@ public class PlayerController : MonoBehaviour {
 
     private void Jump() {
         //Jumpステートの場合はJumpにfalseをセットする
-        bool isJumpSetFalse = this.playerAnimator.GetCurrentAnimatorStateInfo(0).IsName("jumpBool");
-        this.playerAnimator.SetBool("jumpBool", false);
+        //this.playerAnimator.SetBool("jumpBool", true);
     }
 
     private void Move() {
@@ -204,14 +202,14 @@ public class PlayerController : MonoBehaviour {
         playerPos = transform.position;
     }
 
-    private State CommonState() {
+    private void CommonStateTransition() {
 
         inputHorizontal = this.inputHorizontal;
         isJump = this.isJump;
 
+        
         if (inputHorizontal == 0f) nowState = State.Idle;                                   //移動入力が無ければIdleに遷移
         if (inputHorizontal > 0.01f || inputHorizontal < -0.01f) nowState = State.Move;        //移動キーが押されたらMoveに遷移
         if (isGround && isJump) nowState = State.Jump;                        //ジャンプキーが押されたらJumpに遷移
-        return nowState;
     }
 }
