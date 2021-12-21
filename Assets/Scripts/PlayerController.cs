@@ -6,7 +6,7 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour {
     //ステート
-    public enum State { Idle, Jump, Move, Shot };
+    public enum State { Idle, Jump, Move };
     State nowState;
     State preState;
 
@@ -35,11 +35,10 @@ public class PlayerController : MonoBehaviour {
     public int currentHP { get; private set; }
     public int maxHP { get; private set; } = 100;
     //攻撃間隔
-    private float interval = 0.3f;
+    private const float INTERVAL = 0.3f;
     private float intervalTime = 0f;
     //操作プロパティ
-    private float isMove { get; set; }
-    private bool isLMouse { get; set; }
+    private float inputHorizontal { get; set; }
     private bool isJump { get; set; }
 
 
@@ -66,71 +65,89 @@ public class PlayerController : MonoBehaviour {
     // Update is called once per frame
     void Update() {
 
-        //Jumpステートの場合はJumpにfalseをセットする
-        bool isJumpSetFalse = this.playerAnimator.GetCurrentAnimatorStateInfo(0).IsName("jumpBool");
-        this.playerAnimator.SetBool("jumpBool", false);
+       
 
         //移動キー
         bool isJumpButton = Input.GetButton("Jump");
-        float isMoveButton = Input.GetAxisRaw("Horizontal") * speed * Time.deltaTime;
+        float inputMoveButton = Input.GetAxisRaw("Horizontal") * speed * Time.deltaTime;
 
-        //攻撃キー
-        bool isLeftMouseButton = Input.GetButton("Fire1");
+        //移動、ジャンププロパティ代入
+        isJump = isJumpButton;
+        inputHorizontal = inputMoveButton;
 
         //マウスのポジション
         mousePos = Input.mousePosition;
 
-        //射撃間隔
-        if (intervalTime > 0.0f) intervalTime -= Time.deltaTime;
-        Debug.Log(nowState);
+        //初期化処理
+        if (nowState != preState) {
+            switch (nowState) {
+                //各ステートごとの初期化処理
+                case State.Idle:
+                    playerAnimator.SetFloat("Run", 0f);
+                    break;
+
+                case State.Move:
+                    break;
+
+                case State.Jump:
+                    this.playerAnimator.SetBool("jumpBool", false);
+                    playerRigidbody.velocity = new Vector3(0f, jumpPower, 0f);
+                    isGround = false;
+                    break;
+
+            }
+            preState = nowState;
+        }
+        
+        //ステート条件
         switch (nowState) {
-
+            
             case State.Idle:    //立っている状態
-                if (isMoveButton == 0f) nowState = State.Idle;                                   //移動入力が無ければIdleに遷移
-                if (isMoveButton > 0.01f || isMoveButton < -0.01f) nowState = State.Move;        //移動キーが押されたらMoveに遷移
-                if (isGround && isJumpButton) nowState = State.Jump;                        //ジャンプキーが押されたらJumpに遷移
-                if (isLeftMouseButton && intervalTime <= 0.0f) nowState = State.Shot;           //左クリックされたらShot状態に遷移
+                CommonState();
                 break;
 
-            case State.Move:
-                if (isMoveButton == 0f) nowState = State.Idle;                                   //移動入力が無ければIdleに遷移
-                if (isMoveButton > 0.01f || isMoveButton < -0.01f) nowState = State.Move;        //移動キーが押されたらMoveに遷移
-                if (isGround && isJumpButton) nowState = State.Jump;                        //ジャンプキーが押されたらJumpに遷移
-                if (isLeftMouseButton && intervalTime <= 0.0f) nowState = State.Shot;           //左クリックされたらShot状態に遷移
+            case State.Move:    //移動状態
+                CommonState();
                 break;
 
-            case State.Jump:
-                if (isMoveButton == 0f) nowState = State.Idle;                                   //移動入力が無ければIdleに遷移
-                if (isMoveButton > 0.01f || isMoveButton < -0.01f) nowState = State.Move;        //移動キーが押されたらMoveに遷移
-                if (isGround && isJumpButton) nowState = State.Jump;                        //ジャンプキーが押されたらJumpに遷移
-                if (isLeftMouseButton && intervalTime <= 0.0f) nowState = State.Shot;           //左クリックされたらShot状態に遷移
-                break;
-
-            case State.Shot:
-                if (isMoveButton == 0f) nowState = State.Idle;                                   //移動入力が無ければIdleに遷移
-                if (isMoveButton > 0.01f || isMoveButton < -0.01f) nowState = State.Move;        //移動キーが押されたらMoveに遷移
-                if (isGround && isJumpButton) nowState = State.Jump;                        //ジャンプキーが押されたらJumpに遷移
-                if (isLeftMouseButton && intervalTime <= 0.0f) nowState = State.Shot;           //左クリックされたらShot状態に遷移
+            case State.Jump:    //ジャンプ状態
+                CommonState();
                 break;
         }
 
+        //ステートごとの実行可能行動
         switch (nowState) {
             case State.Idle:
-                playerAnimator.SetFloat("Run", 0f);
+                Shot();
                 break;
 
             case State.Move:
-                isMove = isMoveButton;
+                
                 Move();
+                Shot();
                 break;
 
             case State.Jump:
+                
                 Jump();
-                break;
-
-            case State.Shot:
                 Shot();
                 break;
+        }
+
+        //ステート終了
+        switch (nowState) {
+
+            case State.Idle:
+                break;
+
+            case State.Move:
+                break;
+
+            case State.Jump:
+                Debug.Log("Jump END");
+                this.playerAnimator.SetBool("jumpBool", false);
+                break;
+
         }
 
         //HPが0以下にならないように設定
@@ -154,29 +171,30 @@ public class PlayerController : MonoBehaviour {
     //射撃メソッド
     private void Shot() {
 
+        if (Time.time <= intervalTime) return;
+ 
         bool isLMouseButton = Input.GetMouseButton(0);
 
         if (isLMouseButton) {
             bullet = Instantiate(magicBullet, transform.position + Vector3.forward * 0.5f + Vector3.up, Quaternion.identity);
         }
 
-        intervalTime = interval;
+        intervalTime = INTERVAL + Time.time;
     }
 
     private void Jump() {
-
-        this.playerAnimator.SetBool("jumpBool", true);
-        playerRigidbody.velocity = new Vector3(0f, jumpPower, 0f);
-        isGround = false;
+        //Jumpステートの場合はJumpにfalseをセットする
+        bool isJumpSetFalse = this.playerAnimator.GetCurrentAnimatorStateInfo(0).IsName("jumpBool");
+        this.playerAnimator.SetBool("jumpBool", false);
     }
 
     private void Move() {
 
-        isMove = this.isMove;
+        inputHorizontal = this.inputHorizontal;
 
         //左右移動
-        transform.position += new Vector3(0f, 0f, isMove);
-        playerAnimator.SetFloat("Run", Mathf.Abs(isMove));
+        transform.position += new Vector3(0f, 0f, inputHorizontal);
+        playerAnimator.SetFloat("Run", Mathf.Abs(inputHorizontal));
         Vector3 diffPos = transform.position - playerPos;
         diffPos.y = 0f;
         if (diffPos.magnitude > 0.01f) {
@@ -184,5 +202,16 @@ public class PlayerController : MonoBehaviour {
             transform.rotation = Quaternion.Lerp(transform.rotation, lookRotation, 0.5f);
         }
         playerPos = transform.position;
+    }
+
+    private State CommonState() {
+
+        inputHorizontal = this.inputHorizontal;
+        isJump = this.isJump;
+
+        if (inputHorizontal == 0f) nowState = State.Idle;                                   //移動入力が無ければIdleに遷移
+        if (inputHorizontal > 0.01f || inputHorizontal < -0.01f) nowState = State.Move;        //移動キーが押されたらMoveに遷移
+        if (isGround && isJump) nowState = State.Jump;                        //ジャンプキーが押されたらJumpに遷移
+        return nowState;
     }
 }
