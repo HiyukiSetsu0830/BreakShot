@@ -2,13 +2,11 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.UI;
 using UnityEngine;
+using UniRx;
+using CharacterState;
 
 
 public class PlayerController : MonoBehaviour {
-    //ステート
-    public enum State { Idle, Jump, Move };
-    State nowState;
-    State preState;
 
     //プレイヤーのアニメーションを入れる
     [SerializeField] private Animator playerAnimator;
@@ -17,6 +15,15 @@ public class PlayerController : MonoBehaviour {
     [SerializeField] private Texture2D cursor;
     [SerializeField] private Slider slider;
     private GameObject bullet;
+
+    //変更前のステート名
+    private string prevStateName;
+
+    //ステート
+    public StateProcessor StateProcessor { get; set; } = new StateProcessor();
+    public CharacterStateIdle StateIdle { get; set; } = new CharacterStateIdle();
+    public CharacterStateRun StateRun { get; set; } = new CharacterStateRun();
+    public CharacterStateJump StateJump { get; set; } = new CharacterStateJump();
 
     //HPの最小値
     private const int MIN_HEALTH = 0;
@@ -58,7 +65,10 @@ public class PlayerController : MonoBehaviour {
         currentHP = maxHP;
 
         //プレイヤーの状況初期化
-        nowState = State.Idle;
+        StateProcessor.State.Value = StateIdle;
+        StateIdle.ExecAction = Idle;
+        StateRun.ExecAction = Run;
+        StateJump.ExecAction = Jump;
 
     }
 
@@ -75,6 +85,13 @@ public class PlayerController : MonoBehaviour {
 
         //マウスのポジション
         mousePos = Input.mousePosition;
+
+        //ステートの値が変更されたら実行処理を行うようにする
+        StateProcessor.State.Where(_ => StateProcessor.State.Value.GetStateName() != prevStateName).Subscribe(_ => {
+            Debug.Log("Now State" + StateProcessor.State.Value.GetStateName());
+            prevStateName = StateProcessor.State.Value.GetStateName();
+            StateProcessor.Execute();
+        }).AddTo(this);
 
         //初期化処理
         if (nowState != preState) {
@@ -182,12 +199,14 @@ public class PlayerController : MonoBehaviour {
     }
 
     private void Jump() {
+        Debug.Log("StateがJump状態に遷移しました。");
         //Jumpステートの場合はJumpにfalseをセットする
         //this.playerAnimator.SetBool("jumpBool", true);
     }
 
-    private void Move() {
+    private void Run() {
 
+        Debug.Log("StateがRun状態に遷移しました。");
         inputHorizontal = this.inputHorizontal;
 
         //左右移動
@@ -200,6 +219,11 @@ public class PlayerController : MonoBehaviour {
             transform.rotation = Quaternion.Lerp(transform.rotation, lookRotation, 0.5f);
         }
         playerPos = transform.position;
+    }
+
+    private void Idle() {
+
+        Debug.Log("StateがIdle状態に遷移しました。");
     }
 
     private void CommonStateTransition() {

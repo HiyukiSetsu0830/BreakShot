@@ -52,26 +52,22 @@ namespace CharacterState {
     public class CharacterStateRun : CharacterState{
 
         public override string GetStateName() {
+
             return "State:Run";
         }
 
     }
 
     /// <summary>
-    /// UŒ‚‚µ‚Ä‚¢‚éó‘Ô
+    /// ƒWƒƒƒ“ƒv‚µ‚Ä‚¢‚éó‘Ô
     /// </summary>
-    public class CharacterStateAttack : CharacterState {
+    public class CharacterStateJump : CharacterState {
 
         public override string GetStateName() {
 
-            return "State:Attack";
-        }
-
-        public override void Execute() {
-            if (ExecAction != null) ExecAction();
+            return "State:Jump";
         }
 
     }
-
 }
 
