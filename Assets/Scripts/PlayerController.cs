@@ -60,16 +60,35 @@ public class PlayerController : MonoBehaviour {
         //最初の座標を取得
         playerPos = GetComponent<Transform>().position;
 
+        /*******************************************************
+         * プレイヤーのステータス設定
+         * ****************************************************/
+
+        //スタート時の状態
+        StateProcessor.State.Value = StateIdle;
+
+        //初期化用の関数を登録する
+        StateIdle.InitializeExecAction = InitializeIdle;
+        StateRun.InitializeExecAction = InitializeRun;
+        StateJump.InitializeExecAction = InitializeJump;
+        //実行用の関数を登録する
+        StateIdle.UpdateExecAction = UpdateIdle;
+        StateRun.UpdateExecAction = UpdateRun;
+        StateJump.UpdateExecAction = UpdateJump;
+        //終了用の関数を登録する
+        StateIdle.EndExecAction = EndIdle;
+        StateRun.EndExecAction = EndRun;
+        StateJump.EndExecAction = EndJump;
+
+        //ステートの値が変更されたら実行処理を行うようにする
+        StateProcessor.State.Where(_ => StateProcessor.State.Value.GetStateName() != prevStateName).Subscribe(_ => {
+            prevStateName = StateProcessor.State.Value.GetStateName();
+            StateProcessor.InitializeExecute();
+        }).AddTo(this);
+
         //HP最大
         slider.value = 1;
         currentHP = maxHP;
-
-        //プレイヤーの状況初期化
-        StateProcessor.State.Value = StateIdle;
-        StateIdle.ExecAction = Idle;
-        StateRun.ExecAction = Run;
-        StateJump.ExecAction = Jump;
-
     }
 
     // Update is called once per frame
@@ -86,85 +105,19 @@ public class PlayerController : MonoBehaviour {
         //マウスのポジション
         mousePos = Input.mousePosition;
 
-        //ステートの値が変更されたら実行処理を行うようにする
+        //現在のステートをアップデートする
+        StateProcessor.UpdateExecute();
         StateProcessor.State.Where(_ => StateProcessor.State.Value.GetStateName() != prevStateName).Subscribe(_ => {
-            Debug.Log("Now State" + StateProcessor.State.Value.GetStateName());
             prevStateName = StateProcessor.State.Value.GetStateName();
-            StateProcessor.Execute();
+            StateProcessor.UpdateExecute();
         }).AddTo(this);
 
-        //初期化処理
-        if (nowState != preState) {
-            switch (nowState) {
-                //各ステートごとの初期化処理
-                case State.Idle:
-                    playerAnimator.SetFloat("Run", 0f);
-                    break;
-
-                case State.Move:
-                    break;
-
-                case State.Jump:
-                    this.playerAnimator.SetBool("jumpBool", false);
-                    playerRigidbody.velocity = new Vector3(0f, jumpPower, 0f);
-                    isGround = false;
-                    break;
-
-            }
-            preState = nowState;
-        }
-        
-        //ステート条件
-        switch (nowState) {
-            
-            case State.Idle:    //立っている状態
-                CommonStateTransition();
-                break;
-
-            case State.Move:    //移動状態
-                CommonStateTransition();
-                break;
-
-            case State.Jump:    //ジャンプ状態
-                CommonStateTransition();
-                break;
-        }
-
-        //ステートごとの実行可能行動
-        switch (nowState) {
-            case State.Idle:
-                Jump();
-                Shot();
-                break;
-
-            case State.Move:
-                Jump();
-                Move();
-                Shot();
-                break;
-
-            case State.Jump:
-                Jump();
-                Shot();
-                break;
-        }
-
-        //ステート終了
-        if (nowState != preState) {
-            switch (nowState) {
-
-                case State.Idle:
-                    break;
-
-                case State.Move:
-                    break;
-
-                case State.Jump:
-                    this.playerAnimator.SetBool("jumpBool", true);
-                    break;
-
-            }
-        }
+        //現在のステータスを終了する
+        StateProcessor.EndExecute();
+        StateProcessor.State.Where(_ => StateProcessor.State.Value.GetStateName() != prevStateName).Subscribe(_ => {
+            prevStateName = StateProcessor.State.Value.GetStateName();
+            StateProcessor.EndExecute();
+        }).AddTo(this);
 
         //HPが0以下にならないように設定
         if (currentHP < 0) currentHP = MIN_HEALTH;
@@ -188,7 +141,7 @@ public class PlayerController : MonoBehaviour {
     private void Shot() {
 
         if (Time.time <= intervalTime) return;
- 
+
         bool isLMouseButton = Input.GetMouseButton(0);
 
         if (isLMouseButton) {
@@ -198,15 +151,8 @@ public class PlayerController : MonoBehaviour {
         intervalTime = INTERVAL + Time.time;
     }
 
-    private void Jump() {
-        Debug.Log("StateがJump状態に遷移しました。");
-        //Jumpステートの場合はJumpにfalseをセットする
-        //this.playerAnimator.SetBool("jumpBool", true);
-    }
+    private void CommonRun() {
 
-    private void Run() {
-
-        Debug.Log("StateがRun状態に遷移しました。");
         inputHorizontal = this.inputHorizontal;
 
         //左右移動
@@ -221,19 +167,98 @@ public class PlayerController : MonoBehaviour {
         playerPos = transform.position;
     }
 
-    private void Idle() {
+    private void CommonJump() {
+
+        this.playerAnimator.SetBool("jumpBool", true);
+        playerRigidbody.velocity = new Vector3(0f, jumpPower, 0f);
+        isGround = false;
+    }
+
+
+    /*********************************************************************
+     *ステート初期化関数
+     ********************************************************************/
+
+    /// <summary>
+    /// <param name="InitializeJump">Jumpステートの初期化</param>
+    /// </summary>
+    private void InitializeJump() {
+
+        Debug.Log("【初期化】StateがJump状態に遷移しました。");
+
+        //Jumpステートの場合はJumpにfalseをセットする
+        this.playerAnimator.SetBool("jumpBool", false);
+    }
+
+    /// <summary>
+    /// /// <param name="InitializeRun">Runステートの初期化</param>
+    /// </summary>
+    private void InitializeRun() {
+
+        Debug.Log("【初期化】StateがRun状態に遷移しました。");
+        //特に処理なし
+    }
+
+    /// <summary>
+    /// <param name="InitializeIdle">Idleステートの初期化</param>
+    /// </summary>
+    private void InitializeIdle() {
+        Debug.Log("【初期化】StateがIdle状態に遷移しました。");
+
+        //Idleステートの場合はRunアニメーションを0fにする。
+        playerAnimator.SetFloat("Run", 0f);
+    }
+
+    /************************************************************
+     * ステータス実行中の処理
+     * *********************************************************/
+
+    private void UpdateRun() {
+
+        Debug.Log("StateがRun状態に遷移しました。");
+        
+        Shot();
+        CommonRun();
+        CommonJump();
+
+    }
+
+    private void UpdateIdle() {
 
         Debug.Log("StateがIdle状態に遷移しました。");
+        Shot();
+        CommonRun();
+        CommonJump();
+
+
+        playerAnimator.SetFloat("Run", 0f);
     }
 
-    private void CommonStateTransition() {
+    private void UpdateJump() {
 
-        inputHorizontal = this.inputHorizontal;
-        isJump = this.isJump;
+        Debug.Log("StateがJump状態に遷移しました。");
+        Shot();
+        CommonRun();
+        CommonJump();
 
-        
-        if (inputHorizontal == 0f) nowState = State.Idle;                                   //移動入力が無ければIdleに遷移
-        if (inputHorizontal > 0.01f || inputHorizontal < -0.01f) nowState = State.Move;        //移動キーが押されたらMoveに遷移
-        if (isGround && isJump) nowState = State.Jump;                        //ジャンプキーが押されたらJumpに遷移
     }
+
+    /****************************************************************
+     * ステータス終了の処理
+     * *************************************************************/
+
+    private void EndIdle() {
+        Debug.Log("Idle状態が終了しました。");
+    }
+
+    private void EndRun() {
+        Debug.Log("Run状態が終了しました。");
+    }
+
+    private void EndJump() {
+        Debug.Log("Jump状態が終了しました。");
+        this.playerAnimator.SetBool("jumpBool", false);
+    }
+
+   
 }

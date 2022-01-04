@@ -12,18 +12,35 @@ namespace CharacterState {
         //ステート本体
         public ReactiveProperty<CharacterState> State { get; set; } = new ReactiveProperty<CharacterState>();
         //実行ブリッジ
-        public void Execute() => State.Value.Execute();
+        public void InitializeExecute() => State.Value.InitializeExecute();
+        //実行Execute
+        public void UpdateExecute() => State.Value.UpdateExecute();
+        //終了Execute
+        public void EndExecute() => State.Value.EndExecute();
     }
 
     //ステートのクラス
     public abstract class CharacterState {
 
         //デリゲート
-        public Action ExecAction { get; set; }
+        //初期化のAction
+        public Action InitializeExecAction { get; set; } 
+        //実行Action
+        public Action UpdateExecAction { get; set; }
+        //終了Action
+        public Action EndExecAction { get; set; }
 
         //実行処理
-        public virtual void Execute() {
-            if (ExecAction != null) ExecAction();
+        public virtual void InitializeExecute() {
+            if (InitializeExecAction != null) InitializeExecAction();
+        }
+        //実行Execute
+        public virtual void UpdateExecute() {
+            if (UpdateExecAction != null) UpdateExecAction();
+        }
+        //終了Execute
+        public virtual void EndExecute() {
+            if (EndExecAction != null) EndExecAction();
         }
 
         //ステート名を取得するメソッド
