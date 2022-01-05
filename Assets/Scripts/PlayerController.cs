@@ -94,8 +94,9 @@ public class PlayerController : MonoBehaviour {
     // Update is called once per frame
     void Update() {
 
-        //移動キー
+        //ジャンプボタン
         bool isJumpButton = Input.GetButton("Jump");
+        //移動キー
         float inputMoveButton = Input.GetAxisRaw("Horizontal") * speed * Time.deltaTime;
 
         //移動、ジャンププロパティ代入
@@ -114,10 +115,6 @@ public class PlayerController : MonoBehaviour {
 
         //現在のステータスを終了する
         StateProcessor.EndExecute();
-        StateProcessor.State.Where(_ => StateProcessor.State.Value.GetStateName() != prevStateName).Subscribe(_ => {
-            prevStateName = StateProcessor.State.Value.GetStateName();
-            StateProcessor.EndExecute();
-        }).AddTo(this);
 
         //HPが0以下にならないように設定
         if (currentHP < 0) currentHP = MIN_HEALTH;
@@ -153,6 +150,9 @@ public class PlayerController : MonoBehaviour {
 
     private void CommonRun() {
 
+        //ステータスの更新
+        StateProcessor.State.Value = StateRun;
+        //移動値を取得
         inputHorizontal = this.inputHorizontal;
 
         //左右移動
@@ -168,6 +168,9 @@ public class PlayerController : MonoBehaviour {
     }
 
     private void CommonJump() {
+
+        //ステータスの更新
+        StateProcessor.State.Value = StateJump;
 
         this.playerAnimator.SetBool("jumpBool", true);
         playerRigidbody.velocity = new Vector3(0f, jumpPower, 0f);
@@ -186,7 +189,6 @@ public class PlayerController : MonoBehaviour {
 
         Debug.Log("【初期化】StateがJump状態に遷移しました。");
 
-        //Jumpステートの場合はJumpにfalseをセットする
         this.playerAnimator.SetBool("jumpBool", false);
     }
 
@@ -219,7 +221,7 @@ public class PlayerController : MonoBehaviour {
         
         Shot();
         CommonRun();
-        CommonJump();
+        if (isJump && isGround) CommonJump();
 
     }
 
@@ -228,18 +230,16 @@ public class PlayerController : MonoBehaviour {
         Debug.Log("StateがIdle状態に遷移しました。");
         Shot();
         CommonRun();
-        CommonJump();
-
+        if (isJump && isGround) CommonJump();
 
         playerAnimator.SetFloat("Run", 0f);
     }
 
     private void UpdateJump() {
-
         Debug.Log("StateがJump状態に遷移しました。");
         Shot();
         CommonRun();
-        CommonJump();
+        if (isJump && isGround) CommonJump();
 
     }
 
@@ -249,10 +249,13 @@ public class PlayerController : MonoBehaviour {
 
     private void EndIdle() {
         Debug.Log("Idle状態が終了しました。");
+        
     }
 
     private void EndRun() {
         Debug.Log("Run状態が終了しました。");
+        this.playerAnimator.SetFloat("Run",0f);
+        
     }
 
     private void EndJump() {
