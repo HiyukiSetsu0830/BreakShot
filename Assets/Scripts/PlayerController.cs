@@ -98,6 +98,8 @@ public class PlayerController : MonoBehaviour {
         bool isJumpButton = Input.GetButton("Jump");
         //移動キー
         float inputMoveButton = Input.GetAxisRaw("Horizontal") * speed * Time.deltaTime;
+        //入力が無い場合
+        bool inputHorizontalKey = Mathf.Abs(inputHorizontal) > 0.01;
 
         //移動、ジャンププロパティ代入
         isJump = isJumpButton;
@@ -114,10 +116,12 @@ public class PlayerController : MonoBehaviour {
         }).AddTo(this);
 
         //現在のステータスを終了する
-        StateProcessor.EndExecute();
+        if (!inputHorizontalKey) StateProcessor.EndExecute();
 
         //HPが0以下にならないように設定
         if (currentHP < 0) currentHP = MIN_HEALTH;
+
+        
     }
 
     private void OnCollisionEnter(Collision collision) {
@@ -214,7 +218,7 @@ public class PlayerController : MonoBehaviour {
         Debug.Log("【初期化】StateがIdle状態に遷移しました。");
 
         //Idleステートの場合はRunアニメーションを0fにする。
-        playerAnimator.SetFloat("Run", 0f);
+       // playerAnimator.SetFloat("Run", 0f);
     }
 
     /************************************************************
@@ -226,7 +230,7 @@ public class PlayerController : MonoBehaviour {
         Debug.Log("StateがRun状態に遷移しました。");
         
         Shot();
-        CommonRun();
+        if (Mathf.Abs(inputHorizontal) > 0.01) CommonRun();
         if (inputHorizontal == 0f) CommonIdle();
         if (isJump && isGround) CommonJump();
 
@@ -235,8 +239,9 @@ public class PlayerController : MonoBehaviour {
     private void UpdateIdle() {
 
         Debug.Log("StateがIdle状態に遷移しました。");
-        CommonRun();
+        
         Shot();
+        if (Mathf.Abs(inputHorizontal) > 0.01) CommonRun();
         if (isJump && isGround) CommonJump();
         if (inputHorizontal == 0f) CommonIdle();
         playerAnimator.SetFloat("Run", 0f);
@@ -245,7 +250,7 @@ public class PlayerController : MonoBehaviour {
     private void UpdateJump() {
         Debug.Log("StateがJump状態に遷移しました。");
         Shot();
-        CommonRun();
+        if (Mathf.Abs(inputHorizontal) > 0.01) CommonRun();
         if (isJump && isGround) CommonJump();
 
     }
