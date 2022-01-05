@@ -148,6 +148,12 @@ public class PlayerController : MonoBehaviour {
         intervalTime = INTERVAL + Time.time;
     }
 
+    private void CommonIdle() {
+
+        StateProcessor.State.Value = StateIdle;
+
+    }
+
     private void CommonRun() {
 
         //ステータスの更新
@@ -172,7 +178,7 @@ public class PlayerController : MonoBehaviour {
         //ステータスの更新
         StateProcessor.State.Value = StateJump;
 
-        this.playerAnimator.SetBool("jumpBool", true);
+        this.playerAnimator.SetBool("jumpBool", false);
         playerRigidbody.velocity = new Vector3(0f, jumpPower, 0f);
         isGround = false;
     }
@@ -221,6 +227,7 @@ public class PlayerController : MonoBehaviour {
         
         Shot();
         CommonRun();
+        if (inputHorizontal == 0f) CommonIdle();
         if (isJump && isGround) CommonJump();
 
     }
@@ -228,10 +235,10 @@ public class PlayerController : MonoBehaviour {
     private void UpdateIdle() {
 
         Debug.Log("StateがIdle状態に遷移しました。");
-        Shot();
         CommonRun();
+        Shot();
         if (isJump && isGround) CommonJump();
-
+        if (inputHorizontal == 0f) CommonIdle();
         playerAnimator.SetFloat("Run", 0f);
     }
 
@@ -261,7 +268,5 @@ public class PlayerController : MonoBehaviour {
     private void EndJump() {
         Debug.Log("Jump状態が終了しました。");
         this.playerAnimator.SetBool("jumpBool", false);
-    }
-
-   
+    }   
 }
