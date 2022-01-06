@@ -24,6 +24,7 @@ public class PlayerController : MonoBehaviour {
     public CharacterStateIdle StateIdle { get; set; } = new CharacterStateIdle();
     public CharacterStateRun StateRun { get; set; } = new CharacterStateRun();
     public CharacterStateJump StateJump { get; set; } = new CharacterStateJump();
+    public CharacterStateFall StateFall { get; set; } = new CharacterStateFall();
 
     //HPの最小値
     private const int MIN_HEALTH = 0;
@@ -71,14 +72,17 @@ public class PlayerController : MonoBehaviour {
         StateIdle.InitializeExecAction = InitializeIdle;
         StateRun.InitializeExecAction = InitializeRun;
         StateJump.InitializeExecAction = InitializeJump;
+        StateFall.InitializeExecAction = InitializeFall;
         //実行用の関数を登録する
         StateIdle.UpdateExecAction = UpdateIdle;
         StateRun.UpdateExecAction = UpdateRun;
         StateJump.UpdateExecAction = UpdateJump;
+        StateFall.UpdateExecAction = UpdateFall;
         //終了用の関数を登録する
         StateIdle.EndExecAction = EndIdle;
         StateRun.EndExecAction = EndRun;
         StateJump.EndExecAction = EndJump;
+        StateFall.EndExecAction = EndFall;
 
         //ステートの値が変更されたら実行処理を行うようにする
         StateProcessor.State.Where(_ => StateProcessor.State.Value.GetStateName() != prevStateName).Subscribe(_ => {
@@ -179,12 +183,23 @@ public class PlayerController : MonoBehaviour {
 
     private void CommonJump() {
 
-        //ステータスの更新
-        StateProcessor.State.Value = StateJump;
-
-        this.playerAnimator.SetBool("jumpBool", false);
+       
         playerRigidbody.velocity = new Vector3(0f, jumpPower, 0f);
         isGround = false;
+
+        //ステータス更新　ジャンプ中ならJumpステータス
+        if (playerRigidbody.velocity.y > 0f && !isGround) {
+
+            StateProcessor.State.Value = StateJump;
+            this.playerAnimator.SetBool("jumpBool", true);
+        }        
+    }
+
+    private void CommonFall() {
+
+        StateProcessor.State.Value = StateFall;
+        //Fallアニメーションをtrueにする
+        this.playerAnimator.SetBool("Fall", true);
     }
 
 
@@ -199,7 +214,7 @@ public class PlayerController : MonoBehaviour {
 
         Debug.Log("【初期化】StateがJump状態に遷移しました。");
 
-        this.playerAnimator.SetBool("jumpBool", false);
+       
     }
 
     /// <summary>
@@ -216,9 +231,17 @@ public class PlayerController : MonoBehaviour {
     /// </summary>
     private void InitializeIdle() {
         Debug.Log("【初期化】StateがIdle状態に遷移しました。");
+        playerAnimator.SetFloat("Run", 0f);
 
-        //Idleステートの場合はRunアニメーションを0fにする。
-       // playerAnimator.SetFloat("Run", 0f);
+    }
+
+    /// <summary>
+    /// <param name="InitializeIdle">Idleステートの初期化</param>
+    /// </summary>
+    private void InitializeFall() {
+        Debug.Log("【初期化】StateがFall状態に遷移しました。");
+
+        
     }
 
     /************************************************************
@@ -231,8 +254,9 @@ public class PlayerController : MonoBehaviour {
         
         Shot();
         if (Mathf.Abs(inputHorizontal) > 0.01) CommonRun();
-        if (inputHorizontal == 0f) CommonIdle();
+        if (inputHorizontal == 0f && !isGround) CommonIdle();
         if (isJump && isGround) CommonJump();
+        if (playerRigidbody.velocity.y < 0f && !isGround) CommonFall();
 
     }
 
@@ -243,8 +267,8 @@ public class PlayerController : MonoBehaviour {
         Shot();
         if (Mathf.Abs(inputHorizontal) > 0.01) CommonRun();
         if (isJump && isGround) CommonJump();
-        if (inputHorizontal == 0f) CommonIdle();
-        playerAnimator.SetFloat("Run", 0f);
+        if (inputHorizontal == 0f && !isGround) CommonIdle();
+        if (playerRigidbody.velocity.y < 0f && !isGround) CommonFall();
     }
 
     private void UpdateJump() {
@@ -252,7 +276,16 @@ public class PlayerController : MonoBehaviour {
         Shot();
         if (Mathf.Abs(inputHorizontal) > 0.01) CommonRun();
         if (isJump && isGround) CommonJump();
+        if (playerRigidbody.velocity.y < 0f && !isGround) CommonFall();
 
+    }
+
+    private void UpdateFall() {
+        Debug.Log("StateがFall状態に遷移しました。");
+        Shot();
+        if (Mathf.Abs(inputHorizontal) > 0.01) CommonRun();
+        if (isJump && isGround) CommonJump();
+        if (playerRigidbody.velocity.y < 0f && !isGround) CommonFall();
     }
 
     /****************************************************************
@@ -273,5 +306,11 @@ public class PlayerController : MonoBehaviour {
     private void EndJump() {
         Debug.Log("Jump状態が終了しました。");
         this.playerAnimator.SetBool("jumpBool", false);
-    }   
+    }
+
+    private void EndFall() {
+        Debug.Log("Fall状態が終了しました。");
+        //Fallアニメーションをfalseにする
+        this.playerAnimator.SetBool("fall", false);
+    }
 }

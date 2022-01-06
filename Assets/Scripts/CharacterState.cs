@@ -86,5 +86,17 @@ namespace CharacterState {
         }
 
     }
+
+    /// <summary>
+    /// ‹ó’†‚É‚¢‚éó‘Ô
+    /// </summary>
+    public class CharacterStateFall : CharacterState {
+
+        public override string GetStateName() {
+
+            return "State:Fall";
+        }
+
+    }
 }
 
