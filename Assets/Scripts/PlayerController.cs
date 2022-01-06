@@ -120,7 +120,7 @@ public class PlayerController : MonoBehaviour {
         }).AddTo(this);
 
         //現在のステータスを終了する
-        if (!inputHorizontalKey) StateProcessor.EndExecute();
+        if (!inputHorizontalKey || this.playerRigidbody.velocity.y > 0f && !isGround) StateProcessor.EndExecute();
 
         //HPが0以下にならないように設定
         if (currentHP < 0) currentHP = MIN_HEALTH;
@@ -256,7 +256,7 @@ public class PlayerController : MonoBehaviour {
         if (Mathf.Abs(inputHorizontal) > 0.01) CommonRun();
         if (inputHorizontal == 0f && !isGround) CommonIdle();
         if (isJump && isGround) CommonJump();
-        if (playerRigidbody.velocity.y < 0f && !isGround) CommonFall();
+        if (playerRigidbody.velocity.y < 0f) CommonFall();
 
     }
 
@@ -268,7 +268,7 @@ public class PlayerController : MonoBehaviour {
         if (Mathf.Abs(inputHorizontal) > 0.01) CommonRun();
         if (isJump && isGround) CommonJump();
         if (inputHorizontal == 0f && !isGround) CommonIdle();
-        if (playerRigidbody.velocity.y < 0f && !isGround) CommonFall();
+        if (playerRigidbody.velocity.y < 0f) CommonFall();
     }
 
     private void UpdateJump() {
@@ -276,7 +276,7 @@ public class PlayerController : MonoBehaviour {
         Shot();
         if (Mathf.Abs(inputHorizontal) > 0.01) CommonRun();
         if (isJump && isGround) CommonJump();
-        if (playerRigidbody.velocity.y < 0f && !isGround) CommonFall();
+        if (playerRigidbody.velocity.y < 0f) CommonFall();
 
     }
 
@@ -285,7 +285,7 @@ public class PlayerController : MonoBehaviour {
         Shot();
         if (Mathf.Abs(inputHorizontal) > 0.01) CommonRun();
         if (isJump && isGround) CommonJump();
-        if (playerRigidbody.velocity.y < 0f && !isGround) CommonFall();
+        if (playerRigidbody.velocity.y < 0f) CommonFall();
     }
 
     /****************************************************************
@@ -311,6 +311,6 @@ public class PlayerController : MonoBehaviour {
     private void EndFall() {
         Debug.Log("Fall状態が終了しました。");
         //Fallアニメーションをfalseにする
-        this.playerAnimator.SetBool("fall", false);
+        this.playerAnimator.SetBool("Fall", false);
     }
 }
