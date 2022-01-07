@@ -114,18 +114,10 @@ public class PlayerController : MonoBehaviour {
 
         //現在のステートをアップデートする
         StateProcessor.UpdateExecute();
-        StateProcessor.State.Where(_ => StateProcessor.State.Value.GetStateName() != prevStateName).Subscribe(_ => {
-            prevStateName = StateProcessor.State.Value.GetStateName();
-            StateProcessor.UpdateExecute();
-        }).AddTo(this);
-
-        //現在のステータスを終了する
-        if (!inputHorizontalKey || this.playerRigidbody.velocity.y > 0f && !isGround) StateProcessor.EndExecute();
 
         //HPが0以下にならないように設定
         if (currentHP < 0) currentHP = MIN_HEALTH;
 
-        
     }
 
     private void OnCollisionEnter(Collision collision) {
@@ -156,53 +148,6 @@ public class PlayerController : MonoBehaviour {
         intervalTime = INTERVAL + Time.time;
     }
 
-    private void CommonIdle() {
-
-        StateProcessor.State.Value = StateIdle;
-
-    }
-
-    private void CommonRun() {
-
-        //ステータスの更新
-        StateProcessor.State.Value = StateRun;
-        //移動値を取得
-        inputHorizontal = this.inputHorizontal;
-
-        //左右移動
-        transform.position += new Vector3(0f, 0f, inputHorizontal);
-        playerAnimator.SetFloat("Run", Mathf.Abs(inputHorizontal));
-        Vector3 diffPos = transform.position - playerPos;
-        diffPos.y = 0f;
-        if (diffPos.magnitude > 0.01f) {
-            var lookRotation = Quaternion.LookRotation(diffPos);
-            transform.rotation = Quaternion.Lerp(transform.rotation, lookRotation, 0.5f);
-        }
-        playerPos = transform.position;
-    }
-
-    private void CommonJump() {
-
-       
-        playerRigidbody.velocity = new Vector3(0f, jumpPower, 0f);
-        isGround = false;
-
-        //ステータス更新　ジャンプ中ならJumpステータス
-        if (playerRigidbody.velocity.y > 0f && !isGround) {
-
-            StateProcessor.State.Value = StateJump;
-            this.playerAnimator.SetBool("jumpBool", true);
-        }        
-    }
-
-    private void CommonFall() {
-
-        StateProcessor.State.Value = StateFall;
-        //Fallアニメーションをtrueにする
-        this.playerAnimator.SetBool("Fall", true);
-    }
-
-
     /*********************************************************************
      *ステート初期化関数
      ********************************************************************/
@@ -213,8 +158,10 @@ public class PlayerController : MonoBehaviour {
     private void InitializeJump() {
 
         Debug.Log("【初期化】StateがJump状態に遷移しました。");
+        this.playerAnimator.SetBool("jumpBool", true);
+        playerRigidbody.velocity = new Vector3(0f, jumpPower, 0f);
+        isGround = false;
 
-       
     }
 
     /// <summary>
@@ -223,7 +170,7 @@ public class PlayerController : MonoBehaviour {
     private void InitializeRun() {
 
         Debug.Log("【初期化】StateがRun状態に遷移しました。");
-        //特に処理なし
+        
     }
 
     /// <summary>
@@ -240,8 +187,8 @@ public class PlayerController : MonoBehaviour {
     /// </summary>
     private void InitializeFall() {
         Debug.Log("【初期化】StateがFall状態に遷移しました。");
+        this.playerAnimator.SetBool("Fall", true);
 
-        
     }
 
     /************************************************************
@@ -250,42 +197,85 @@ public class PlayerController : MonoBehaviour {
 
     private void UpdateRun() {
 
-        Debug.Log("StateがRun状態に遷移しました。");
-        
+        Debug.Log("StateがRun状態中です。。");
         Shot();
-        if (Mathf.Abs(inputHorizontal) > 0.01) CommonRun();
-        if (inputHorizontal == 0f && !isGround) CommonIdle();
-        if (isJump && isGround) CommonJump();
-        if (playerRigidbody.velocity.y < 0f) CommonFall();
+        if (inputHorizontal == 0f && isGround) {
+            EndRun();
+            StateProcessor.State.Value = StateIdle;
+        }
+        if (isJump && isGround) {
+            EndRun();
+            StateProcessor.State.Value = StateJump;
+        }
+        //RunからFallに遷移
+        //if ()
 
+        //移動値を取得
+        inputHorizontal = this.inputHorizontal;
+
+        //左右移動
+        transform.position += new Vector3(0f, 0f, inputHorizontal);
+        playerAnimator.SetFloat("Run", Mathf.Abs(inputHorizontal));
+        Vector3 diffPos = transform.position - playerPos;
+        diffPos.y = 0f;
+        if (diffPos.magnitude > 0.01f) {
+            var lookRotation = Quaternion.LookRotation(diffPos);
+            transform.rotation = Quaternion.Lerp(transform.rotation, lookRotation, 0.5f);
+        }
+        playerPos = transform.position;
     }
 
     private void UpdateIdle() {
 
-        Debug.Log("StateがIdle状態に遷移しました。");
-        
+        Debug.Log("StateがIdle状態中です。");
         Shot();
-        if (Mathf.Abs(inputHorizontal) > 0.01) CommonRun();
-        if (isJump && isGround) CommonJump();
-        if (inputHorizontal == 0f && !isGround) CommonIdle();
-        if (playerRigidbody.velocity.y < 0f) CommonFall();
+        if (Mathf.Abs(inputHorizontal) > 0.01) {
+
+            EndIdle();
+            StateProcessor.State.Value = StateRun;
+        }
+
+        if (isJump && isGround) {
+
+            EndIdle();
+            StateProcessor.State.Value = StateJump;
+
+        }
+        //IdleからFallに遷移
+        //if () ;
+
     }
 
     private void UpdateJump() {
-        Debug.Log("StateがJump状態に遷移しました。");
+
+        Debug.Log("StateがJump状態中です。");
         Shot();
-        if (Mathf.Abs(inputHorizontal) > 0.01) CommonRun();
-        if (isJump && isGround) CommonJump();
-        if (playerRigidbody.velocity.y < 0f) CommonFall();
+        if (Mathf.Abs(inputHorizontal) > 0.01) {
+            EndJump();
+            StateProcessor.State.Value = StateRun;
+        }
+        //Fallに遷移する処理
+        //if()
 
     }
 
     private void UpdateFall() {
-        Debug.Log("StateがFall状態に遷移しました。");
+
+        Debug.Log("StateがFall状態中です。。");
         Shot();
-        if (Mathf.Abs(inputHorizontal) > 0.01) CommonRun();
-        if (isJump && isGround) CommonJump();
-        if (playerRigidbody.velocity.y < 0f) CommonFall();
+        if (isGround && Mathf.Abs(inputHorizontal) > 0.01) {
+            EndFall();
+            StateProcessor.State.Value = StateRun;
+        }
+        if (inputHorizontal == 0f && isGround) {
+            EndFall();
+            StateProcessor.State.Value = StateIdle;
+        }
+        //Fallからジャンプの処理
+        if (this.playerRigidbody.velocity.y > 0f && !isGround) {
+            EndFall();
+            StateProcessor.State.Value = StateJump;
+        }
     }
 
     /****************************************************************
