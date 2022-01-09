@@ -14,6 +14,9 @@ public class PlayerController : MonoBehaviour {
     [SerializeField] private GameObject magicBullet;
     [SerializeField] private Texture2D cursor;
     [SerializeField] private Slider slider;
+    //UnityちゃんのHeadをセットする
+    [SerializeField] private GameObject head;
+
     private GameObject bullet;
 
     //変更前のステート名
@@ -102,15 +105,13 @@ public class PlayerController : MonoBehaviour {
         bool isJumpButton = Input.GetButton("Jump");
         //移動キー
         float inputMoveButton = Input.GetAxisRaw("Horizontal") * speed * Time.deltaTime;
-        //入力が無い場合
-        bool inputHorizontalKey = Mathf.Abs(inputHorizontal) > 0.01;
 
         //移動、ジャンププロパティ代入
         isJump = isJumpButton;
         inputHorizontal = inputMoveButton;
 
         //マウスのポジション
-        mousePos = Input.mousePosition;
+        mousePos = GetMousePosition();
 
         //現在のステートをアップデートする
         StateProcessor.UpdateExecute();
@@ -118,7 +119,14 @@ public class PlayerController : MonoBehaviour {
         //HPが0以下にならないように設定
         if (currentHP < 0) currentHP = MIN_HEALTH;
 
+
     }
+
+     protected virtual void LateUpdate() {
+
+        head.transform.localEulerAngles = mousePos;
+        
+     }
 
     private void OnCollisionEnter(Collision collision) {
 
@@ -142,10 +150,48 @@ public class PlayerController : MonoBehaviour {
         bool isLMouseButton = Input.GetMouseButton(0);
 
         if (isLMouseButton) {
+            this.playerAnimator.SetBool("ShotBool",true);
             bullet = Instantiate(magicBullet, transform.position + Vector3.forward * 0.5f + Vector3.up, Quaternion.identity);
         }
 
         intervalTime = INTERVAL + Time.time;
+        
+    }
+
+    //移動メソッド
+    private void Move() {
+
+        //移動値を取得
+        inputHorizontal = this.inputHorizontal;
+
+        //左右移動
+        transform.position += new Vector3(0f, 0f, inputHorizontal);
+        playerAnimator.SetFloat("Run", Mathf.Abs(inputHorizontal));
+        Vector3 diffPos = transform.position - playerPos;
+        diffPos.y = 0f;
+        if (diffPos.magnitude > 0.01f) {
+            var lookRotation = Quaternion.LookRotation(diffPos);
+            transform.rotation = Quaternion.Lerp(transform.rotation, lookRotation, 0.5f);
+        }
+        playerPos = transform.position;
+    }
+
+    //マウスポジションを取得する関数
+    private Vector3 GetMousePosition() {
+
+        //位置座標
+        Vector3 mousePosition;
+        Vector3 screenToWorldPointPosition;
+
+        //Vector3でマウス位置座標を取得する
+        mousePosition = Input.mousePosition;
+        //Z軸修正
+        mousePosition.z = 10f;
+        //マウス位置座用をスクリーン座標からワールド座標に変換する
+        screenToWorldPointPosition = Camera.main.ScreenToWorldPoint(mousePosition);
+
+        return screenToWorldPointPosition;
+
     }
 
     /*********************************************************************
@@ -178,12 +224,12 @@ public class PlayerController : MonoBehaviour {
     /// </summary>
     private void InitializeIdle() {
         Debug.Log("【初期化】StateがIdle状態に遷移しました。");
-        playerAnimator.SetFloat("Run", 0f);
+
 
     }
 
     /// <summary>
-    /// <param name="InitializeIdle">Idleステートの初期化</param>
+    /// <param name="InitializeFall">Idleステートの初期化</param>
     /// </summary>
     private void InitializeFall() {
         Debug.Log("【初期化】StateがFall状態に遷移しました。");
@@ -199,6 +245,7 @@ public class PlayerController : MonoBehaviour {
 
         Debug.Log("StateがRun状態中です。。");
         Shot();
+        Move();
         if (inputHorizontal == 0f && isGround) {
             EndRun();
             StateProcessor.State.Value = StateIdle;
@@ -208,21 +255,12 @@ public class PlayerController : MonoBehaviour {
             StateProcessor.State.Value = StateJump;
         }
         //RunからFallに遷移
-        //if ()
-
-        //移動値を取得
-        inputHorizontal = this.inputHorizontal;
-
-        //左右移動
-        transform.position += new Vector3(0f, 0f, inputHorizontal);
-        playerAnimator.SetFloat("Run", Mathf.Abs(inputHorizontal));
-        Vector3 diffPos = transform.position - playerPos;
-        diffPos.y = 0f;
-        if (diffPos.magnitude > 0.01f) {
-            var lookRotation = Quaternion.LookRotation(diffPos);
-            transform.rotation = Quaternion.Lerp(transform.rotation, lookRotation, 0.5f);
+        if (this.playerRigidbody.velocity.y < 0f && !isGround) {
+            EndIdle();
+            StateProcessor.State.Value = StateFall;
         }
-        playerPos = transform.position;
+
+             
     }
 
     private void UpdateIdle() {
@@ -242,7 +280,10 @@ public class PlayerController : MonoBehaviour {
 
         }
         //IdleからFallに遷移
-        //if () ;
+        if (this.playerRigidbody.velocity.y < 0f && !isGround) {
+            EndIdle();
+            StateProcessor.State.Value = StateFall;
+        }
 
     }
 
@@ -250,12 +291,17 @@ public class PlayerController : MonoBehaviour {
 
         Debug.Log("StateがJump状態中です。");
         Shot();
-        if (Mathf.Abs(inputHorizontal) > 0.01) {
+        Move();        
+        //JumpからFallに遷移
+        if (this.playerRigidbody.velocity.y < 0f && !isGround) {
             EndJump();
-            StateProcessor.State.Value = StateRun;
+            StateProcessor.State.Value = StateFall;
         }
-        //Fallに遷移する処理
-        //if()
+
+        if (isGround && inputHorizontal == 0f) {
+            EndJump();
+            StateProcessor.State.Value = StateIdle;
+        }
 
     }
 
@@ -263,6 +309,7 @@ public class PlayerController : MonoBehaviour {
 
         Debug.Log("StateがFall状態中です。。");
         Shot();
+        Move();
         if (isGround && Mathf.Abs(inputHorizontal) > 0.01) {
             EndFall();
             StateProcessor.State.Value = StateRun;
@@ -289,7 +336,7 @@ public class PlayerController : MonoBehaviour {
 
     private void EndRun() {
         Debug.Log("Run状態が終了しました。");
-        this.playerAnimator.SetFloat("Run",0f);
+        //this.playerAnimator.SetFloat("Run",0f);
         
     }
 
@@ -303,4 +350,6 @@ public class PlayerController : MonoBehaviour {
         //Fallアニメーションをfalseにする
         this.playerAnimator.SetBool("Fall", false);
     }
+
+    
 }
