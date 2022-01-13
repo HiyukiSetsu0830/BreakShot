@@ -14,6 +14,9 @@ public class PlayerController : MonoBehaviour {
     [SerializeField] private GameObject magicBullet;
     [SerializeField] private Texture2D cursor;
     [SerializeField] private Slider slider;
+    [SerializeField] private AudioClip clip;
+    [SerializeField] private AudioSource audioSource;
+
     //UnityちゃんのHeadをセットする
     [SerializeField] private GameObject head;
 
@@ -63,6 +66,8 @@ public class PlayerController : MonoBehaviour {
         playerRigidbody = GetComponent<Rigidbody>();
         //最初の座標を取得
         playerPos = GetComponent<Transform>().position;
+        //AudioSource取得
+        audioSource = GetComponent<AudioSource>();
 
         /*******************************************************
          * プレイヤーのステータス設定
@@ -96,6 +101,7 @@ public class PlayerController : MonoBehaviour {
         //HP最大
         slider.value = 1;
         currentHP = maxHP;
+        
     }
 
     // Update is called once per frame
@@ -119,14 +125,10 @@ public class PlayerController : MonoBehaviour {
         //HPが0以下にならないように設定
         if (currentHP < 0) currentHP = MIN_HEALTH;
 
+        //HP0になったらDeadアニメーション再生
+        this.playerAnimator.SetInteger("Health", currentHP);
 
     }
-
-     protected virtual void LateUpdate() {
-
-        head.transform.localEulerAngles = mousePos;
-        
-     }
 
     private void OnCollisionEnter(Collision collision) {
 
@@ -140,7 +142,9 @@ public class PlayerController : MonoBehaviour {
         bool isEnemyHit = collision.gameObject.CompareTag("Enemy");
         if (isEnemyHit) currentHP -= 10;
         slider.value = (float)currentHP / (float)maxHP;
+        
     }
+
 
     //射撃メソッド
     private void Shot() {
@@ -150,11 +154,13 @@ public class PlayerController : MonoBehaviour {
         bool isLMouseButton = Input.GetMouseButton(0);
 
         if (isLMouseButton) {
-            this.playerAnimator.SetBool("ShotBool",true);
+            this.playerAnimator.SetBool("ShotBool", true);
             bullet = Instantiate(magicBullet, transform.position + Vector3.forward * 0.5f + Vector3.up, Quaternion.identity);
+        } else {
+            this.playerAnimator.SetBool("ShotBool", false);
         }
 
-        intervalTime = INTERVAL + Time.time;
+            intervalTime = INTERVAL + Time.time;
         
     }
 
@@ -186,12 +192,28 @@ public class PlayerController : MonoBehaviour {
         //Vector3でマウス位置座標を取得する
         mousePosition = Input.mousePosition;
         //Z軸修正
-        mousePosition.z = 10f;
+        mousePosition.z = 6.5f;
         //マウス位置座用をスクリーン座標からワールド座標に変換する
         screenToWorldPointPosition = Camera.main.ScreenToWorldPoint(mousePosition);
-
+        
         return screenToWorldPointPosition;
 
+    }
+
+    private void OnAnimatorIK(int layerIndex) {
+
+        //走っているのみの場合はカーソルの方向を向かない
+        if (StateProcessor.State.Value == StateRun && playerAnimator.GetCurrentAnimatorStateInfo(0).IsName("RunShot") == false) {
+
+            this.playerAnimator.SetLookAtPosition(this.mousePos);
+
+            //その他はカーソルを見る
+        } else {
+
+            this.playerAnimator.SetLookAtWeight(0.5f, 0.8f, 0f, 0.0f, 0f);
+            this.playerAnimator.SetLookAtPosition(this.mousePos);
+
+        }
     }
 
     /*********************************************************************
@@ -205,6 +227,7 @@ public class PlayerController : MonoBehaviour {
 
         Debug.Log("【初期化】StateがJump状態に遷移しました。");
         this.playerAnimator.SetBool("jumpBool", true);
+        audioSource.PlayOneShot(clip);
         playerRigidbody.velocity = new Vector3(0f, jumpPower, 0f);
         isGround = false;
 
