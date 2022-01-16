@@ -11,7 +11,7 @@ public class PlayerController : MonoBehaviour {
     //プレイヤーのアニメーションを入れる
     [SerializeField] private Animator playerAnimator;
     [SerializeField] private Rigidbody playerRigidbody;
-    [SerializeField] private GameObject magicBullet;
+    [SerializeField] private GameObject playerBullet;
     [SerializeField] private Texture2D cursor;
     [SerializeField] private Slider slider;
     [SerializeField] private AudioClip clip;
@@ -19,6 +19,8 @@ public class PlayerController : MonoBehaviour {
 
     //UnityちゃんのHeadをセットする
     [SerializeField] private GameObject head;
+    [SerializeField] private GameObject leftArm;
+    [SerializeField] private GameObject RightArm;
 
     private GameObject bullet;
 
@@ -37,6 +39,8 @@ public class PlayerController : MonoBehaviour {
 
     //前方向の速度
     private float speed = 10f;
+    //走り撃ち時の減速割合
+    private float runShotSpeed = 0.7f;
     //上方向の速度
     private float jumpPower = 9f;
     //地面接触判定
@@ -107,10 +111,15 @@ public class PlayerController : MonoBehaviour {
     // Update is called once per frame
     void Update() {
 
+        //前の位置を取得
+        Vector3 lastPos = transform.position;
         //ジャンプボタン
         bool isJumpButton = Input.GetButton("Jump");
         //移動キー
-        float inputMoveButton = Input.GetAxisRaw("Horizontal") * speed * Time.deltaTime;
+        float inputMoveButton;
+        //走り撃ちの時、スピードを落とす
+        if (playerAnimator.GetCurrentAnimatorStateInfo(0).IsName("RunShot") || playerAnimator.GetCurrentAnimatorStateInfo(0).IsName("BackRun")) inputMoveButton = Input.GetAxisRaw("Horizontal") * speed * runShotSpeed * Time.deltaTime;
+        else inputMoveButton = Input.GetAxisRaw("Horizontal") * speed * Time.deltaTime;
 
         //移動、ジャンププロパティ代入
         isJump = isJumpButton;
@@ -128,6 +137,17 @@ public class PlayerController : MonoBehaviour {
         //HP0になったらDeadアニメーション再生
         this.playerAnimator.SetInteger("Health", currentHP);
 
+        //プレイヤーの向き
+        Vector3 playerToMouse = mousePos - playerPos;
+        float playerRotationY = transform.eulerAngles.y;
+        playerToMouse.y = 0f;
+        var lookRotation = Quaternion.LookRotation(playerToMouse);
+        transform.rotation = Quaternion.Lerp(transform.rotation, lookRotation, 0.5f);
+        playerAnimator.SetFloat("PlayerDirection", playerRotationY);
+        //過去と現在の位置の比較して、パラメータに渡す
+        float playerPosZ = playerPos.z - lastPos.z;
+        playerAnimator.SetFloat("PlayerPosZ",playerPosZ);
+
     }
 
     private void OnCollisionEnter(Collision collision) {
@@ -140,9 +160,28 @@ public class PlayerController : MonoBehaviour {
 
         //Enemyに当たるとHPが減る(仮)
         bool isEnemyHit = collision.gameObject.CompareTag("Enemy");
-        if (isEnemyHit) currentHP -= 10;
+        if (isEnemyHit) currentHP -= 100;
         slider.value = (float)currentHP / (float)maxHP;
         
+    }
+
+    //IKアニメーション
+    private void OnAnimatorIK(int layerIndex) {
+
+        //走っているのみの場合はカーソルの方向を向かない
+        if (StateProcessor.State.Value == StateRun && playerAnimator.GetCurrentAnimatorStateInfo(0).IsName("RunShot") == false) {
+
+            this.playerAnimator.SetLookAtPosition(this.mousePos);
+
+            //その他はカーソルを見る
+        } else {
+
+            this.playerAnimator.SetLookAtWeight(0.5f, 0.8f, 0f, 0.0f, 0f);
+            this.playerAnimator.SetLookAtPosition(this.mousePos);
+
+        }
+
+       
     }
 
 
@@ -155,7 +194,7 @@ public class PlayerController : MonoBehaviour {
 
         if (isLMouseButton) {
             this.playerAnimator.SetBool("ShotBool", true);
-            bullet = Instantiate(magicBullet, transform.position + Vector3.forward * 0.5f + Vector3.up, Quaternion.identity);
+            bullet = Instantiate(playerBullet, transform.position + Vector3.forward * 0.5f + Vector3.up, Quaternion.identity);
         } else {
             this.playerAnimator.SetBool("ShotBool", false);
         }
@@ -169,21 +208,17 @@ public class PlayerController : MonoBehaviour {
 
         //移動値を取得
         inputHorizontal = this.inputHorizontal;
-
+        
         //左右移動
         transform.position += new Vector3(0f, 0f, inputHorizontal);
         playerAnimator.SetFloat("Run", Mathf.Abs(inputHorizontal));
-        Vector3 diffPos = transform.position - playerPos;
-        diffPos.y = 0f;
-        if (diffPos.magnitude > 0.01f) {
-            var lookRotation = Quaternion.LookRotation(diffPos);
-            transform.rotation = Quaternion.Lerp(transform.rotation, lookRotation, 0.5f);
-        }
+        //プレイヤーの位置を更新      
         playerPos = transform.position;
+
     }
 
     //マウスポジションを取得する関数
-    private Vector3 GetMousePosition() {
+    public Vector3 GetMousePosition() {
 
         //位置座標
         Vector3 mousePosition;
@@ -200,21 +235,7 @@ public class PlayerController : MonoBehaviour {
 
     }
 
-    private void OnAnimatorIK(int layerIndex) {
-
-        //走っているのみの場合はカーソルの方向を向かない
-        if (StateProcessor.State.Value == StateRun && playerAnimator.GetCurrentAnimatorStateInfo(0).IsName("RunShot") == false) {
-
-            this.playerAnimator.SetLookAtPosition(this.mousePos);
-
-            //その他はカーソルを見る
-        } else {
-
-            this.playerAnimator.SetLookAtWeight(0.5f, 0.8f, 0f, 0.0f, 0f);
-            this.playerAnimator.SetLookAtPosition(this.mousePos);
-
-        }
-    }
+    
 
     /*********************************************************************
      *ステート初期化関数

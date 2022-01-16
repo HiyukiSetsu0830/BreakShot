@@ -471,12 +471,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   playerAnimator: {fileID: 0}
   playerRigidbody: {fileID: 0}
-  magicBullet: {fileID: 6804990658058999119, guid: 65c9f6563c561ee4e8905d1e6a32548b, type: 3}
+  playerBullet: {fileID: 6804990658058999119, guid: 65c9f6563c561ee4e8905d1e6a32548b, type: 3}
   cursor: {fileID: 2800000, guid: 666f45a1953efde4aacb8867e4d0d8f5, type: 3}
   slider: {fileID: 1615564064}
   clip: {fileID: 8300000, guid: 462388095daf67f49850a840a394e22b, type: 3}
   audioSource: {fileID: 0}
   head: {fileID: 867531176}
+  leftArm: {fileID: 2014266402}
+  RightArm: {fileID: 2059211169}
 --- !u!82 &389015634
 AudioSource:
   m_ObjectHideFlags: 0
@@ -2519,5 +2521,15 @@ MonoBehaviour:
 --- !u!4 &1958854696 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 400074, guid: 8f0565f23a2b58541a475bd3c1393052, type: 3}
+  m_PrefabInstance: {fileID: 1107531822}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &2014266402 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 100008, guid: 8f0565f23a2b58541a475bd3c1393052, type: 3}
+  m_PrefabInstance: {fileID: 1107531822}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &2059211169 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 100068, guid: 8f0565f23a2b58541a475bd3c1393052, type: 3}
   m_PrefabInstance: {fileID: 1107531822}
   m_PrefabAsset: {fileID: 0}
