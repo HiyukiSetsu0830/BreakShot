@@ -16,6 +16,8 @@ public class PlayerController : MonoBehaviour {
     [SerializeField] private Slider slider;
     [SerializeField] private AudioClip clip;
     [SerializeField] private AudioSource audioSource;
+    [SerializeField] private GameObject leftMuzzle;
+    [SerializeField] private GameObject rightMuzzle;
 
     //UnityちゃんのHeadをセットする
     [SerializeField] private GameObject head;
@@ -58,6 +60,8 @@ public class PlayerController : MonoBehaviour {
     //操作プロパティ
     private float inputHorizontal { get; set; }
     private bool isJump { get; set; }
+    //プレイヤーの攻撃力
+    private int attackPoint;
 
 
     // Start is called before the first frame update
@@ -66,7 +70,7 @@ public class PlayerController : MonoBehaviour {
         Cursor.SetCursor(cursor, new Vector2(cursor.width / 2, cursor.height / 2), CursorMode.ForceSoftware);
         //Animatorを取得
         playerAnimator = GetComponent<Animator>();
-        //RigidBodyの取得
+        //プレイヤーのRigidBodyの取得
         playerRigidbody = GetComponent<Rigidbody>();
         //最初の座標を取得
         playerPos = GetComponent<Transform>().position;
@@ -127,6 +131,7 @@ public class PlayerController : MonoBehaviour {
 
         //マウスのポジション
         mousePos = GetMousePosition();
+        
 
         //現在のステートをアップデートする
         StateProcessor.UpdateExecute();
@@ -184,6 +189,13 @@ public class PlayerController : MonoBehaviour {
        
     }
 
+    public int AttackPoint() {
+
+        attackPoint = Random.Range(1, 4);
+
+        return attackPoint;
+    }
+
 
     //射撃メソッド
     private void Shot() {
@@ -191,16 +203,29 @@ public class PlayerController : MonoBehaviour {
         if (Time.time <= intervalTime) return;
 
         bool isLMouseButton = Input.GetMouseButton(0);
+        //攻撃力のブレ
+        attackPoint = AttackPoint();
 
         if (isLMouseButton) {
             this.playerAnimator.SetBool("ShotBool", true);
-            bullet = Instantiate(playerBullet, transform.position + Vector3.forward * 0.5f + Vector3.up, Quaternion.identity);
+            bullet = Instantiate(playerBullet, leftMuzzle.transform.position, Quaternion.identity);
+            bullet.transform.LookAt(mousePos);
+            bullet = Instantiate(playerBullet, rightMuzzle.transform.position, Quaternion.identity);
+            bullet.transform.LookAt(mousePos);
+
+
         } else {
             this.playerAnimator.SetBool("ShotBool", false);
         }
 
             intervalTime = INTERVAL + Time.time;
         
+    }
+
+    private void OnDrawGizmos() {
+
+        Gizmos.DrawLine(leftMuzzle.transform.position, mousePos);
+
     }
 
     //移動メソッド
