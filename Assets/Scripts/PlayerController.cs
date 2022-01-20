@@ -76,6 +76,7 @@ public class PlayerController : MonoBehaviour {
         playerPos = GetComponent<Transform>().position;
         //AudioSource取得
         audioSource = GetComponent<AudioSource>();
+        
 
         /*******************************************************
          * プレイヤーのステータス設定
