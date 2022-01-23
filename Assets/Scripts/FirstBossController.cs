@@ -17,6 +17,8 @@ public class FirstBossController : MonoBehaviour {
     //攻撃間隔
     private const float INTERVAL = 0.3f;
     private float intervalTime = 0f;
+    //ボスの回転　ランダム数値
+    private float randomNum;
 
     //ダメージ取得
     private int damagePoint;
@@ -31,7 +33,9 @@ public class FirstBossController : MonoBehaviour {
     // Update is called once per frame
     void Update()
     {
-        
+        //ボスの回転をランダムに取得
+        randomNum = Random.Range(3f, 5f);
+        transform.Rotate(randomNum, 0f, randomNum);
     }
 
     private void OnCollisionEnter(Collision collision) {
