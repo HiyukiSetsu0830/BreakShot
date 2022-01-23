@@ -13,12 +13,13 @@ GameObject:
   - component: {fileID: 8544365016318984319}
   - component: {fileID: 8544365016318984318}
   - component: {fileID: 8544365016318984314}
-  m_Layer: 0
+  - component: {fileID: 1903114725}
+  m_Layer: 8
   m_Name: FirstBossBullet
   m_TagString: EnemyBullet
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
+  m_StaticEditorFlags: 4294967295
   m_IsActive: 1
 --- !u!4 &8544365016318984317
 Transform:
@@ -27,9 +28,9 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8544365016318984257}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: 0.17159338, y: 0.31384584, z: -0.057779994, w: 0.9320504}
   m_LocalPosition: {x: -10.220148, y: 6.439642, z: -13.455055}
-  m_LocalScale: {x: 0.7, y: 0.7, z: 0.7}
+  m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
@@ -108,3 +109,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c3186910ff2392443bf9628e806e6f41, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!54 &1903114725
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8544365016318984257}
+  serializedVersion: 2
+  m_Mass: 1
+  m_Drag: 0
+  m_AngularDrag: 0.05
+  m_UseGravity: 0
+  m_IsKinematic: 0
+  m_Interpolate: 0
+  m_Constraints: 118
+  m_CollisionDetection: 0

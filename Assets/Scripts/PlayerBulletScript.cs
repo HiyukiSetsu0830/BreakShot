@@ -7,7 +7,7 @@ public class PlayerBulletScript : MonoBehaviour
     private Rigidbody rb;
     private PlayerController playerController;
 
-    private float speed = 2500f;
+    private float speed = 6000f;
     private Vector3 mousePos;
 
     // Start is called before the first frame update
@@ -30,6 +30,6 @@ public class PlayerBulletScript : MonoBehaviour
 
     private void OnCollisionEnter(Collision collision) {
         bool bulletDestroy = collision.gameObject.CompareTag("Enemy");
-        Destroy(this.gameObject);
+        if(bulletDestroy)Destroy(this.gameObject);
     }
 }

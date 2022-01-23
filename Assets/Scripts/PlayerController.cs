@@ -222,7 +222,7 @@ public class PlayerController : MonoBehaviour {
             intervalTime = INTERVAL + Time.time;
         
     }
-
+    
     private void OnDrawGizmos() {
 
         Gizmos.DrawLine(leftMuzzle.transform.position, mousePos);
