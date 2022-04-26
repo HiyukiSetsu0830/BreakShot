@@ -2702,8 +2702,8 @@ GameObject:
   - component: {fileID: 1415764050}
   - component: {fileID: 1415764049}
   - component: {fileID: 1415764048}
-  - component: {fileID: 1415764052}
   - component: {fileID: 1415764053}
+  - component: {fileID: 1415764052}
   m_Layer: 3
   m_Name: FirstBoss
   m_TagString: Enemy
@@ -2794,11 +2794,13 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1415764047}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b69fdf32d6a7e3e4ea5be8b6595bff27, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  attackDatas:
+  - {fileID: 4142492960506840544, guid: a2f745723663b58439dfbc8d22f79eda, type: 3}
   attackIndex: 0
   attackTimer: 0
 --- !u!114 &1415764053

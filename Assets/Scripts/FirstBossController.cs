@@ -36,6 +36,8 @@ public class FirstBossController : MonoBehaviour {
         //ƒ{ƒX‚Ì‰ñ“]‚ðƒ‰ƒ“ƒ_ƒ€‚ÉŽæ“¾
         randomNum = Random.Range(3f, 5f);
         transform.Rotate(randomNum, 0f, randomNum);
+
+        CubeShoot();
     }
 
     private void OnCollisionEnter(Collision collision) {

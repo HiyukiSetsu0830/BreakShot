@@ -7,7 +7,7 @@ public class BossAttackSequence : MonoBehaviour {
 
 
     
-    public List<BossAttack> attackDatas;
+    public List<FirstBossAttack> attackDatas;
     public int attackIndex;
     public float attackTimer;
     
@@ -16,6 +16,7 @@ public class BossAttackSequence : MonoBehaviour {
         
 
     }
+
     void Update() {
 
         //タイムライン
@@ -26,19 +27,11 @@ public class BossAttackSequence : MonoBehaviour {
             attackIndex++;
             attackTimer = 0;
         }
+    }
 
-    }    
-
-    private void Attack(BossAttack bossAttack) {
+    private void Attack(FirstBossAttack firstBossAttack) {
         
     }
 
 }
 
-public class BossAttack {
-
-    public float time;
-    public int damage;
-    public string animationName;
-    //その他攻撃に必要な情報
-}

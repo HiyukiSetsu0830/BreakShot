@@ -12,8 +12,9 @@ GameObject:
   - component: {fileID: 8544365016318984316}
   - component: {fileID: 8544365016318984319}
   - component: {fileID: 8544365016318984318}
-  - component: {fileID: 8544365016318984314}
   - component: {fileID: 1903114725}
+  - component: {fileID: 8544365016318984314}
+  - component: {fileID: 4142492960506840544}
   m_Layer: 8
   m_Name: FirstBossBullet
   m_TagString: EnemyBullet
@@ -97,18 +98,6 @@ BoxCollider:
   serializedVersion: 2
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &8544365016318984314
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8544365016318984257}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c3186910ff2392443bf9628e806e6f41, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!54 &1903114725
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -125,3 +114,29 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 118
   m_CollisionDetection: 0
+--- !u!114 &8544365016318984314
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8544365016318984257}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c3186910ff2392443bf9628e806e6f41, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &4142492960506840544
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8544365016318984257}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b1b7d4aad0202f048ab2fbfcfb66e8e4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  time: 0
+  damage: 0
